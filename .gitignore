@@ -1,0 +1,8 @@
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+
+# Un-Ignore VHD files in rood and sub dirs
+!**/*.vhd
