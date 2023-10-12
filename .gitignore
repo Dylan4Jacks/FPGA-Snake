@@ -6,3 +6,6 @@
 
 # Un-Ignore VHD files in rood and sub dirs
 !**/*.vhd
+!**/*.vhdl
+!**/*.c
+!**/*.v
