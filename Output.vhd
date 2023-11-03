@@ -14,6 +14,7 @@ entity OutputController is
         o_LATCH           : out STD_LOGIC;              -- Latch input
         o_CLK             : out STD_LOGIC;              -- Clock input
         o_DATA            : out STD_LOGIC;              -- Data input
+		  o_EN              : out STD_LOGIC;              -- Data input
         o_ROW             : out STD_LOGIC_VECTOR(3 downto 0)  -- Row input
         
     );
@@ -21,9 +22,9 @@ end entity OutputController;
 	 
 architecture Behavioral of OutputController is
 
-type state_type is (s_idle, s_process_bit, s_clk_on, s_latch_on, s_process_row);
+type state_type is (s_reset, s_process_bit, s_clk_on, s_clk_off, s_latch_on, s_latch_off);
 
-signal state : state_type := s_idle;
+signal state : state_type := s_reset;
 signal bit_count : integer range 0 to 15 := 0; -- 16 bits 
 signal row_count : integer range 0 to 15 := 0; -- 16 rows
 
@@ -34,43 +35,45 @@ process(clk_60Hz)
 begin
     if rising_edge(clk_60Hz) then
         case state is
-            when s_idle =>
+            when s_reset =>
                 bit_count <= 0;
-                row_count <= 0;
-					 o_LATCH		<= '0';  
-					 o_CLK 		<= '0';  
-                o_ROW <= "0000"; -- Reset to the first row
+                row_count <= 0; 
                 state <= s_process_bit;
 
             when s_process_bit =>
-                o_Data <= i_Screen_Display(row_count)(bit_count); -- Send data bit
-                state <= s_clk_on; -- Move to the next state to toggle the clock
-					 o_CLK <= '0';  -- Reset
+					o_Data <= i_Screen_Display(row_count)(bit_count); -- Send data bit
+					state <= s_clk_on; -- Move to the next state to toggle the clock
 					 
 
             when s_clk_on =>
 					o_CLK <= '1'; -- Send a pulse
+					state <= s_clk_off;
+					
+				when s_clk_off =>
+					o_CLK <= '0'; -- OFF
 					if bit_count = 15 then
-					  bit_count <= 0;
-					  state <= s_latch_on;
+						o_EN <= '0';
+						o_ROW <= STD_LOGIC_VECTOR(to_unsigned(row_count, 4));
+						state <= s_latch_on;
 					else
 						bit_count <= bit_count + 1;     -- TODO: may be issue with Bit_Count for testing purposes only
-					   state <= s_process_bit;
+						state <= s_process_bit;
 					end if;
 
 				when s_latch_on =>
-					 o_LATCH <= '1'; -- Send a pulse
-					 if row_count = 15 then
-						  state <= s_idle; -- Reset everything
-					 else
-						  row_count <= row_count + 1;
-						  state <= s_process_row;
-					 end if;
-					 
-				 when s_process_row =>
-					 o_LATCH <= '0'; -- Reset
-					 o_ROW <= STD_LOGIC_VECTOR(to_unsigned(row_count, 4));
-					 state <= s_process_bit;
+					o_LATCH <= '1'; -- Send a pulse
+					state <= s_latch_off; 
+				
+				when s_latch_off =>
+					o_LATCH <= '0'; -- Send a pulse
+					o_EN <= '1';
+					if row_count = 15 then
+						state <= s_reset;
+					else
+						row_count <= row_count + 1;     -- TODO: may be issue with Bit_Count for testing purposes only
+						bit_count <= 0;
+						state <= s_process_bit;
+					end if;
 					 
 			  end case;
     end if;

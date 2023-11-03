@@ -62,40 +62,23 @@ architecture Structure of SnakeTLE is
 	signal o_Clk_60Hz : STD_LOGIC := '0';
 	
 	signal Screen_Display : Screen_Display_Type := (
-		--  "1111111111111111",
-		--  "1000000000000001",
-		--  "1000000000000001",
-		--  "1000000000000001",
-		--  "1000000000000001",
-		--  "1000000000000001",
-		--  "1000000000000001",
-		--  "1000000000000001",
-		--  "1000000000000001",
-		--  "1000000000000001",
-		--  "1000000000000001",
-		--  "1000000000000001",
-		--  "1000000000000001",
-		--  "1000000000000001",
-		--  "1000000000000001",
-		--  "1111111111111111"
-		 "1000000000000000",
+		 "1100110011001100",
 		 "0000000000000010",
 		 "0010000000000001",
-		 "0001000000000000",
+		 "0001000001000100",
 		 "0000100000000000",
-		 "0000010000000000",
+		 "0000010000111000",
 		 "0000001000000000",
 		 "0000000100000000",
-		 "0000000010000000",
-		 "0000000001000000",
+		 "1000000010000001",
+		 "0000000101000000",
 		 "0000000000100000",
 		 "0000000000010000",
 		 "0000000000001000",
 		 "0000000000000100",
 		 "0000000000000010",
-		 "0000000000000001"
+		 "0000000000001111"
 	);
-	
 
 
 	
@@ -116,6 +99,7 @@ architecture Structure of SnakeTLE is
         o_LATCH           : out STD_LOGIC;
         o_CLK             : out STD_LOGIC;
         o_DATA            : out STD_LOGIC;
+		  o_EN				  : out STD_LOGIC;
         o_ROW             : out STD_LOGIC_VECTOR(3 downto 0)
         -- Add other ports as needed
 		);
@@ -153,12 +137,11 @@ begin
 	-- =================================================== Simple Wire Connections
 	o_LED_D1 		<= o_Clk_60Hz;
 	o_LED_D4			<= o_LATCH;
-	o_EN <= '1';
 	-- =================================================== Logic
 	Clk_Div_inst: clk_div port map (
     clk_out => o_Clk_60Hz,
     clk_in  => i_CLK_50MHz,
-	 frequency_in => 20000
+	 frequency_in => 19000 -- Exact Clk for 24Hz output_Display is 18947Hz Clk
 	);
 	
 	OutputController_inst: OutputController
@@ -168,6 +151,7 @@ begin
 				o_LATCH           => o_LATCH,
 				o_CLK             => o_CLK,
 				o_DATA            => o_DATA,
+				o_EN					=> o_EN,
 				o_ROW             => o_ROW
         );
 
