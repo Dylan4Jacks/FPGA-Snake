@@ -58,31 +58,14 @@ architecture Structure of SnakeTLE is
 	
 	-- =================================================== Internal Signals
 
+	signal i_X_Dir : STD_LOGIC := '0';
+	signal i_Y_Dir : STD_LOGIC := '0';
+	
 	--Clocks
 	signal o_Clk_Display : STD_LOGIC := '0';
 	signal o_Clk_Game : STD_LOGIC := '0';
 	
-	signal Screen_Display : Screen_Display_Type := (
-		 "0000000000000000",
-		 "0000000000000000",
-		 "0000000000000000",
-		 "0001000000001000",
-		 "0000100000010000",
-		 "0000010000100000",
-		 "0000001001000000",
-		 "0000000110000000",
-		 "0000000110000000",
-		 "0000001001000000",
-		 "0000010000100000",
-		 "0000100000010000",
-		 "0001000000001000",
-		 "0000000000000000",
-		 "0000000000000000",
-		 "0000000000000000"
-	);
-
-
-	
+	signal Screen_Display : Screen_Display_Type;
 	
 	-- =================================================== Component Declarations
 	component clk_div
@@ -106,6 +89,14 @@ architecture Structure of SnakeTLE is
 		);
 	end component;
 	
+	component GameState
+		port(
+			clk_Game_Speed 	 : in STD_LOGIC;  
+			i_X_Dir			 	 : in STD_LOGIC;
+			i_Y_Dir			 	 : in STD_LOGIC;
+			o_Screen_Display   : out Screen_Display_Type
+		);
+	end component;
 	
 begin
 	-- =================================================== Invertions
@@ -138,7 +129,13 @@ begin
 	-- =================================================== Simple Wire Connections
 	o_LED_D1 		<= o_Clk_Display;
 	o_LED_D2 		<= o_Clk_Game;
-	o_LED_D4			<= o_LATCH;
+	
+	o_LED_D3			<= i_X_Dir;
+	o_LED_D4			<= i_Y_Dir;
+	
+	i_X_Dir <= i_S1_LEFT AND NOT i_S2_RIGHT;
+	i_Y_Dir <= i_S4_DOWN AND NOT i_S3_UP;
+	
 	-- =================================================== Logic
 	Clk_Display_Speed: clk_div port map (
     clk_out => o_Clk_Display,
@@ -162,6 +159,14 @@ begin
 				o_EN					=> o_EN,
 				o_ROW             => o_ROW
         );
+
+	GameState_inst: GameState
+		port map(
+			clk_Game_Speed 	 => o_Clk_Game,
+			i_X_Dir			 	 => i_X_Dir,
+			i_Y_Dir			 	 => i_Y_Dir,
+			o_Screen_Display   => Screen_Display
+		);
 
 end Structure;
 
