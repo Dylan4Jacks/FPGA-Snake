@@ -40,7 +40,7 @@ begin
             when s_reset =>
                 bit_count <= 0;
                 row_count <= 0; 
-					 internal_Screen_Display <= i_Screen_Display;
+					 internal_Screen_Display <= i_Screen_Display; -- Lock GameState while setting i_Screen_Display
                 state <= s_process_bit;
 
             when s_process_bit =>
@@ -56,6 +56,7 @@ begin
 					o_CLK <= '0'; -- OFF
 					if bit_count = 15 then
 						o_EN <= '0';
+						-- ==================== when bit_count <= 0; is HERE - Display ONLY the Incorrect Pixals ================
 						o_ROW <= STD_LOGIC_VECTOR(to_unsigned(row_count, 4));
 						state <= s_latch_on;
 					else
@@ -73,8 +74,9 @@ begin
 					if row_count = 15 then
 						state <= s_reset;
 					else
-						row_count <= row_count + 1;     -- TODO: may be issue with Bit_Count for testing purposes only
+						-- ==================== when bit_count <= 0; is HERE - Display Incorrect Pixals and Correct Pixals ================
 						bit_count <= 0;
+						row_count <= row_count + 1;     -- TODO: may be issue with Bit_Count for testing purposes only
 						state <= s_process_bit;
 					end if;
 					 
