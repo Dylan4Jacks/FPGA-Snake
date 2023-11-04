@@ -59,25 +59,26 @@ architecture Structure of SnakeTLE is
 	-- =================================================== Internal Signals
 
 	--Clocks
-	signal o_Clk_60Hz : STD_LOGIC := '0';
+	signal o_Clk_Display : STD_LOGIC := '0';
+	signal o_Clk_Game : STD_LOGIC := '0';
 	
 	signal Screen_Display : Screen_Display_Type := (
-		 "1100110011001100",
-		 "0000000000000010",
-		 "0010000000000001",
-		 "0001000001000100",
-		 "0000100000000000",
-		 "0000010000111000",
-		 "0000001000000000",
-		 "0000000100000000",
-		 "1000000010000001",
-		 "0000000101000000",
-		 "0000000000100000",
-		 "0000000000010000",
-		 "0000000000001000",
-		 "0000000000000100",
-		 "0000000000000010",
-		 "0000000000001111"
+		 "0000000000000000",
+		 "0000000000000000",
+		 "0000000000000000",
+		 "0001000000001000",
+		 "0000100000010000",
+		 "0000010000100000",
+		 "0000001001000000",
+		 "0000000110000000",
+		 "0000000110000000",
+		 "0000001001000000",
+		 "0000010000100000",
+		 "0000100000010000",
+		 "0001000000001000",
+		 "0000000000000000",
+		 "0000000000000000",
+		 "0000000000000000"
 	);
 
 
@@ -94,7 +95,7 @@ architecture Structure of SnakeTLE is
 	
 	component OutputController
 		port(
-        clk_60Hz          : in STD_LOGIC;
+        clk_Display_Speed : in STD_LOGIC;
         i_Screen_Display  : in Screen_Display_Type;
         o_LATCH           : out STD_LOGIC;
         o_CLK             : out STD_LOGIC;
@@ -135,18 +136,25 @@ begin
 	
 	
 	-- =================================================== Simple Wire Connections
-	o_LED_D1 		<= o_Clk_60Hz;
+	o_LED_D1 		<= o_Clk_Display;
+	o_LED_D2 		<= o_Clk_Game;
 	o_LED_D4			<= o_LATCH;
 	-- =================================================== Logic
-	Clk_Div_inst: clk_div port map (
-    clk_out => o_Clk_60Hz,
+	Clk_Display_Speed: clk_div port map (
+    clk_out => o_Clk_Display,
     clk_in  => i_CLK_50MHz,
-	 frequency_in => 19000 -- Exact Clk for 24Hz output_Display is 18947Hz Clk
+	 frequency_in => 24000 -- Exact Clk for 24Hz output_Display is 18947Hz Clk
+	);
+	
+	Clk_Game_Speed: clk_div port map (
+    clk_out => o_Clk_Game,
+    clk_in  => i_CLK_50MHz,
+	 frequency_in => 1 
 	);
 	
 	OutputController_inst: OutputController
         port map(
-				clk_60Hz 			=> o_Clk_60Hz,
+				clk_Display_Speed => o_Clk_Display,
             i_Screen_Display  => Screen_Display,
 				o_LATCH           => o_LATCH,
 				o_CLK             => o_CLK,

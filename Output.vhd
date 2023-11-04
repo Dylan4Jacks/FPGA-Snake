@@ -9,7 +9,7 @@ use work.Types.ALL;
 
 entity OutputController is
     port(
-        clk_60Hz          : in STD_LOGIC;              -- 60Hz clock input
+        clk_Display_Speed : in STD_LOGIC;              -- 60Hz clock input
         i_Screen_Display  : in Screen_Display_Type;    -- Screen display input
         o_LATCH           : out STD_LOGIC;              -- Latch input
         o_CLK             : out STD_LOGIC;              -- Clock input
@@ -28,20 +28,23 @@ signal state : state_type := s_reset;
 signal bit_count : integer range 0 to 15 := 0; -- 16 bits 
 signal row_count : integer range 0 to 15 := 0; -- 16 rows
 
+signal internal_Screen_Display : Screen_Display_Type := (others => (others => '0'));
+
 begin
 
 
-process(clk_60Hz)
+process(clk_Display_Speed)
 begin
-    if rising_edge(clk_60Hz) then
+    if rising_edge(clk_Display_Speed) then
         case state is
             when s_reset =>
                 bit_count <= 0;
                 row_count <= 0; 
+					 internal_Screen_Display <= i_Screen_Display;
                 state <= s_process_bit;
 
             when s_process_bit =>
-					o_Data <= i_Screen_Display(row_count)(bit_count); -- Send data bit
+					o_Data <= internal_Screen_Display(row_count)(bit_count); -- Send data bit
 					state <= s_clk_on; -- Move to the next state to toggle the clock
 					 
 
