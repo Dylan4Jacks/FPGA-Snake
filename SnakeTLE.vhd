@@ -7,6 +7,14 @@ use work.Types.ALL;
 
 entity SnakeTLE is
 	port(
+		-- Input SPI Pins
+		spi_sclk		: out std_logic;
+		spi_cs_n		: out std_logic;
+		spi_dout		: out std_logic;
+		spi_din		: in std_logic;
+	
+	
+	
 		-- Input Clock
 		i_CLK_50MHz_NOT : in STD_LOGIC;
 	
@@ -60,6 +68,7 @@ architecture Structure of SnakeTLE is
 
 	signal i_X_Dir : STD_LOGIC := '0';
 	signal i_Y_Dir : STD_LOGIC := '0';
+	signal i_game_frequency : integer := 2400;
 	
 	--Clocks
 	signal o_Clk_Display : STD_LOGIC := '0';
@@ -68,6 +77,25 @@ architecture Structure of SnakeTLE is
 	signal Screen_Display : Screen_Display_Type;
 	
 	-- =================================================== Component Declarations
+	component Input_L
+		port(
+		 -- CLOCK:
+		 clk_5: in std_logic; -- 5 MHz FPGA clock
+	 
+	 
+		 -- SPI SIGNALS:
+		 spi_sclk: out std_logic; -- communication clock
+		 spi_cs_n: out std_logic; -- chip select pin
+		 spi_dout: out std_logic; -- serial data out
+		 spi_din:  in std_logic; -- serial data in
+		 
+		 LED_1: out std_logic;
+		 LED_2: out std_logic;
+		 LED_3: out std_logic;
+		 LED_4: out std_logic
+		);
+	end component;
+	
 	component clk_div
 		port(
 			clk_out : out std_logic;
@@ -92,6 +120,7 @@ architecture Structure of SnakeTLE is
 	component GameState
 		port(
 			clk_Game_Speed 	 : in STD_LOGIC;  
+			i_game_frequency	 : in integer;
 			i_X_Dir			 	 : in STD_LOGIC;
 			i_Y_Dir			 	 : in STD_LOGIC;
 			o_Screen_Display   : out Screen_Display_Type
@@ -127,27 +156,37 @@ begin
 	
 	
 	-- =================================================== Simple Wire Connections
-	o_LED_D1 		<= o_Clk_Display;
-	o_LED_D2 		<= o_Clk_Game;
-	
-	o_LED_D3			<= i_X_Dir;
-	o_LED_D4			<= i_Y_Dir;
 	
 	i_X_Dir <= i_S1_LEFT AND NOT i_S2_RIGHT;
 	i_Y_Dir <= i_S4_DOWN AND NOT i_S3_UP;
 	
-	-- =================================================== Logic
-	Clk_Display_Speed: clk_div port map (
-    clk_out => o_Clk_Display,
-    clk_in  => i_CLK_50MHz,
-	 frequency_in => 24000 -- Exact Clk for 24Hz output_Display is 18947Hz Clk
-	);
 	
-	Clk_Game_Speed: clk_div port map (
-    clk_out => o_Clk_Game,
-    clk_in  => i_CLK_50MHz,
-	 frequency_in => 1 
-	);
+	-- =================================================== Input Logic
+	Input_L_inst: Input_L
+		port map(
+			-- CLOCK:
+			clk_5 => i_CLK_50MHz, -- 5 MHz FPGA clock
+
+
+			-- SPI SIGNALS:
+			spi_sclk 	=> spi_sclk, -- communication clock
+			spi_cs_n 	=> spi_cs_n, -- chip select pin
+			spi_dout 	=> spi_dout, -- serial data out
+			spi_din 		=> spi_din, -- serial data in
+
+			LED_1 		=> o_LED_D1,
+			LED_2 		=> o_LED_D2,
+			LED_3 		=> o_LED_D3,
+			LED_4 		=> o_LED_D4
+		);
+	
+	-- =================================================== Output Logic
+	Clk_Display_Speed: clk_div 
+		port map (
+			clk_out => o_Clk_Display,
+			clk_in  => i_CLK_50MHz,
+			frequency_in => 24000 -- Exact Clk for 24Hz output_Display is 18947Hz Clk
+		);
 	
 	OutputController_inst: OutputController
         port map(
@@ -159,10 +198,20 @@ begin
 				o_EN					=> o_EN,
 				o_ROW             => o_ROW
         );
-
+	
+	
+	-- =================================================== Game Logic
+	Clk_Game_Speed: clk_div 
+		port map (
+			clk_out => o_Clk_Game,
+			clk_in  => i_CLK_50MHz,
+			frequency_in => 2400 
+		);
+	
 	GameState_inst: GameState
 		port map(
 			clk_Game_Speed 	 => o_Clk_Game,
+			i_game_frequency	 => i_game_frequency,
 			i_X_Dir			 	 => i_X_Dir,
 			i_Y_Dir			 	 => i_Y_Dir,
 			o_Screen_Display   => Screen_Display
