@@ -6,7 +6,6 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
  
 entity Input_L is
 Generic (
-        CLK_FREQ    : natural := 250e6; -- set system clock frequency in Hz
         WORD_SIZE   : natural := 10;    -- size of transfer word in bits, must be power of two
         SLAVE_COUNT : natural := 1     -- count of SPI slaves
     );
@@ -21,7 +20,7 @@ port(
     spi_dout: out std_logic; -- serial data out
 	 spi_din:  in std_logic; -- serial data in
 	 
-	 LED_1: out std_logic;
+	 LED_1: out std_logic;  --LED assignation to test X and Y axis performance
 	 LED_2: out std_logic;
 	 LED_3: out std_logic;
 	 LED_4: out std_logic
@@ -36,7 +35,7 @@ architecture implementation of Input_L is
     signal present_state : states := start; -- FSM states register
 	 signal next_state : states := start; -- FSM states register
  
-	 signal counter_data: integer:=0;
+	 signal counter_data: integer:=0; --Counters to handle if transitions
 	 signal edge_count: integer:=0;
  
 	 signal SCLK_Count: integer :=1; 
@@ -48,16 +47,15 @@ architecture implementation of Input_L is
 	 
 	 -- Inverted Signals
 	 
-	 signal not_sclk 	: STD_LOGIC := '0';
-	 signal not_cs_n 	: STD_LOGIC := '0';
-	 signal not_dout 	: STD_LOGIC := '0';
+	 signal not_sclk 	: STD_LOGIC := '0'; --inverted variables which handle the FPGA's nature of inverting
+	 signal not_dout 	: STD_LOGIC := '0'; --inputs and outputs
 	 signal not_din 	: STD_LOGIC := '0';
 
 	 begin
  
 	 -- Inversions
 	 
- --   spi_cs_n    <=NOT not_cs_n;
+ 
 	 spi_sclk    <= NOT not_sclk;
 	 spi_dout    <= NOT not_dout;
 	 not_din     <= NOT spi_din;
@@ -79,9 +77,10 @@ architecture implementation of Input_L is
 	 -- PRESENT STATE REGISTER
     fsm_present_state_p : process (not_sclk, present_state,next_state)
     begin
-        if (falling_edge(not_sclk)) then
+        if (falling_edge(not_sclk)) then --Every time there is a falling edge on the postscaled clk, 
+													  --allow for state transition
 
-                present_state <= next_state;
+                present_state <= next_state;  --Present state is updated if a new state transition is defined
 
         end if;
     end process;
@@ -95,14 +94,14 @@ architecture implementation of Input_L is
 		 
 			  case present_state is
 					
-					when start =>
+					when start => --State for defining preliminary set up for preparation of ADC communication
 					
 					spi_cs_n <= '0';  -- ADC to begin
 					not_dout <='1'; -- D_in to be set for Start Bit
 					
 					next_state <= first_edge;
 					
-					when first_edge =>
+					when first_edge => --State that initialises ADC communication
 					
 						spi_cs_n <= '0';
 						not_dout <='1'; --Start bit
@@ -110,9 +109,9 @@ architecture implementation of Input_L is
 					
 						next_state <= second_edge;
 						
-						edge_count <=1;
+						edge_count <=1; --monitors in which edge position the communication is currently at
 
-					when second_edge =>
+					when second_edge => --State which defines which data for configuration will be sent to the ADC
 						 
 						spi_cs_n <= '0';
 							
@@ -123,7 +122,8 @@ architecture implementation of Input_L is
 						if (D_outXY = '1') then
 							
 							not_dout <= '0'; -- ADC will read all 0's for Control Bits, for CH1
-							D_outXY <= '0';
+							D_outXY <= '0';  -- Variable that registers if the current data transmitted is with
+												  -- respect to the X or Y axes, being '0' for X and '1' for Y axis
 						
 						else
 							
@@ -132,7 +132,7 @@ architecture implementation of Input_L is
 						
 						end if;
 							
-					when Data_out =>
+					when Data_out => --State responsible for sending configuration data to the ADC
 					
 						edge_count <=edge_count +1;
 
@@ -145,17 +145,18 @@ architecture implementation of Input_L is
 						end if;
 						
 					
-					when Data_in =>
+					when Data_in =>  --State responsible for reading the data sent from the ADC
 					
 						data_load_out <= '0';
 						 
 						edge_count <= edge_count+1;
-						counter_data <= 17-edge_count;
+						counter_data <= 17-edge_count; --counter that allows for assignation of information from
+																 --the highest value bit to the lowest whilst reading D_in
 						
 						if (D_outXY = '0') and (counter_data >= 0) then
 							
-							data_X(counter_data) <= not_din;
-							
+							data_X(counter_data) <= not_din; --Every rising edge the data currently at D_in is
+																		--assigned to the respective 10 bit logic vector
 						
 						
 						elsif (D_outXY = '1') and (counter_data >= 0) then
@@ -166,7 +167,7 @@ architecture implementation of Input_L is
 				
 						end if;
 					 
-						if (edge_count = 18) then
+						if (edge_count = 18) then 
 					 
 							next_state <= finished;
 							
@@ -177,7 +178,7 @@ architecture implementation of Input_L is
 						
 						
 					
-					when finished => 
+					when finished => --Transitionaty state from a finished reading cycle into a new one
 						 
 					 edge_count <= 0; 
 					 next_state <= start;
@@ -196,7 +197,10 @@ architecture implementation of Input_L is
     end process fsm_next_state_p;
 	 
 	 
-	 LED: process(data_X,data_Y,data_load_out,D_outXY)
+	 LED: process(data_X,data_Y,data_load_out,D_outXY) --process which handles testing of the received input
+																		--if appropiate communication was achieved, the same
+																		--logic implemented here would be utilised for assigning
+																		--variables for registering X and Y position
         
     begin
         if (data_load_out = '1') then
@@ -216,8 +220,8 @@ architecture implementation of Input_L is
 				LED_1 <='0';
 				LED_4 <='0';
 				
---				elsif (D_outXY ='1'  AND data_Y < 400) then
---				
+--				elsif (D_outXY ='1'  AND data_Y < 400) then    --Y logic has been commented out due to not appropiately
+--																			  --working
 --				LED_2 <='1';
 --				LED_3 <='0';
 --				
