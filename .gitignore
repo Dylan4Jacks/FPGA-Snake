@@ -9,3 +9,7 @@
 !**/*.vhdl
 !**/*.c
 !**/*.v
+
+# Documentation and Images
+!Documentation/
+!Documentation/*
