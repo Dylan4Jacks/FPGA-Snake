@@ -65,7 +65,7 @@ architecture Structure of SnakeTLE is
 	signal o_LED_D4 : STD_LOGIC := '0';
 	
 	-- =================================================== Internal Signals
-
+	
 	signal i_X_Dir : STD_LOGIC := '0';
 	signal i_Y_Dir : STD_LOGIC := '0';
 	signal i_game_frequency : integer := 2400;
@@ -73,6 +73,8 @@ architecture Structure of SnakeTLE is
 	--Clocks
 	signal o_Clk_Display : STD_LOGIC := '0';
 	signal o_Clk_Game : STD_LOGIC := '0';
+	
+	signal i_Move_Dir : integer range 0 to 4 := 1;
 	
 	signal Screen_Display : Screen_Display_Type;
 	
